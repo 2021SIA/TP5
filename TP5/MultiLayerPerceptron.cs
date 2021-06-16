@@ -70,7 +70,7 @@ namespace TP5
             BrentSearch search = new BrentSearch(function, 0, 1);
             bool success = search.Minimize();   
             double min = search.Solution;
-
+            
             return min;
         }
 
@@ -173,6 +173,7 @@ namespace TP5
             Vector<double>[] h = new Vector<double>[M];
             double error = 2 * minError + 1;
             double error_min = error;
+            double alpha = 0.8;
 
             for(int i = 0; i < epochs && error_min > minError; i++)
             {
@@ -208,13 +209,20 @@ namespace TP5
                     {
                         if (deltaW[k] != null)
                         {
-                            deltaW[k] += lr * delta[k].OuterProduct(V[k]);
-                            //deltaW[k] += LearningRate * delta[k].OuterProduct(V[k]);
+
+                            // --->USAR ESTO CUANDO ESTE LA VARIABLE MOMENTUM<----
+                            //deltaW[k] = momentum? lr * delta[k].OuterProduct(V[k]) + alpha * deltaW[k] :  lr * delta[k].OuterProduct(V[k]) + deltaW[k];
+                            
+                            // esto con momentum desactivado
+                            //deltaW[k] += lr * delta[k].OuterProduct(V[k]);
+                            
+                            // esto con momentum activadO
+                            deltaW[k] = lr * delta[k].OuterProduct(V[k]) + alpha * deltaW[k];
+
                         }                           
                         else
                         {
                             deltaW[k] = lr * delta[k].OuterProduct(V[k]);
-                            //deltaW[k] = LearningRate * delta[k].OuterProduct(V[k]);
                         }
                     }
 
