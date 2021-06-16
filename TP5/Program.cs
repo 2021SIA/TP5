@@ -74,6 +74,18 @@ namespace TP5
             };
             var fonts = fontRaw.Select(row => Vector<double>.Build.DenseOfEnumerable(row.Select(n => n/31.0)));
             perceptron.Learn(fonts.ToArray(), fonts.ToArray(), new Vector<double>[] { }, new Vector<double>[] { }, 1, 0, 10000);
+            //Vector<Double> v = Vector<double>.Build.Dense(2, i => i/2);
+            //Console.WriteLine(v);
+            //var arr = perceptron.MapTry(v);
+            //Console.WriteLine(arr);
+            //foreach (double bin in arr)
+            //{
+            //    Console.WriteLine(bin);
+            //    long m = BitConverter.DoubleToInt64Bits(bin);
+            //    string str = Convert.ToString(m, 2);;
+            //    Console.WriteLine(str);
+            //}
+            
             var error = fonts.Aggregate(0.0,(sum, v) => sum + perceptron.CalculateError(new Vector<double>[] { v }, new Vector<double>[] { v }));
             return;
         }
