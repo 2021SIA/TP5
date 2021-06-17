@@ -45,6 +45,7 @@ namespace TP5
         private Vector<double> Map(Vector<double> input, Matrix<double>[] w)
         {
             
+            
             Vector<double> V = input;
             for (int k = 0; k < layers.Length; k++)
             {
@@ -55,11 +56,28 @@ namespace TP5
             }
             return V;
         }
+
+        //dado el espacio latente te devuelve la letra que representa
         public Vector<double> MapTry(Vector<double> input)
         {
             Matrix<double>[] w = W;
             Vector<double> V = input;
             for (int k = 2; k < layers.Length; k++)
+            {
+                //Agrego el valor 1 al principio de cada salida intermedia.
+                if (k > 0 || (w[k].ColumnCount != V.Count))
+                    V = Vector<double>.Build.DenseOfEnumerable(new double[] { 1 }.Concat(V));
+                V = (w[k] * V).Map(g[k]);
+            }
+            return V;
+        }
+
+        // obtiene el espacio latente de una letra dada
+        public Vector<double> MapGet(Vector<double> input)
+        {
+            Matrix<double>[] w = W;
+            Vector<double> V = input;
+            for (int k = 0; k < 2; k++)
             {
                 //Agrego el valor 1 al principio de cada salida intermedia.
                 if (k > 0 || (w[k].ColumnCount != V.Count))
@@ -189,9 +207,9 @@ namespace TP5
             double error_min = error;
             double alpha = 0.8;
 
+
             for(int i = 0; i < epochs && error_min > minError; i++)
             {
-
                 int[] rand = Combinatorics.GeneratePermutation(input.Length);
                 double lr = AdaptiveLearningRate ? optimizing(input, V, w, M, h, delta, trainingOutput, deltaW, batch, error, rand) : LearningRate;
                 int j;
