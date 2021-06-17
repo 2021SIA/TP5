@@ -44,8 +44,8 @@ namespace TP5
             new double[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1f }   // 0x5f, _
         };
         public string TrainingInput { get; set; }
-        public string Activation { get; set; } = "sigmoid";
-        public double LearningRate { get; set; }
+        public string Activation { get; set; } = "nonlinear";
+        public double LearningRate { get; set; } = 0.1;
         public int Epochs { get; set; }
         public int Batch { get; set; } = 1;
         public int[] Layers { get; set; } = null;
