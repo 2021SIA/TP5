@@ -54,5 +54,29 @@ min_error: <min error limit> (default=0)
 exercise_test: <1|2> (default=1)
 ```
 
+## Python script (Ej 2.a)
 
+Convert csv weights to tf model format
+```console
+python basicToTF.py [csv weights] [model output dir] [latent dimensions]
+```
 
+Plot images in latent space
+```console
+python plotLatent.py [model dir] [images dir]
+```
+
+Get bounds of images encoded in latent space
+```console
+python printLatentRange.py [model dir] [images dir]
+```
+
+Generate new output images with GUI
+```console
+python sliders.py [model dir] [images dir]
+```
+
+Train tf model
+```console
+python trainer.py [model dir] [images dir]
+```
