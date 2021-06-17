@@ -21,7 +21,7 @@ Information about valid arguments can be found with the --help command
 .\TP5.exe --help
 
 TP5
-  Simple and Multi-layer Perceptrons
+  Autoencoders
 
 Usage:
   TP5 [options]
