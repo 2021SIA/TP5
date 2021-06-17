@@ -1,0 +1,6 @@
+﻿training_input: font_set
+activation: nonlinear
+epochs: 1000
+exercise_test: 2
+layers: [7,4,2,4,7]
+

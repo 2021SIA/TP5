@@ -35,6 +35,7 @@ namespace TP5
             this.g = g;
             this.gprime = gprime;
             this.momentum = momentum;
+            this.InitializeRandom();
         }
         public double CalculateError(Vector<double>[] input, Vector<double>[] desiredOutput) => CalculateError(input, desiredOutput, W);
         private double CalculateError(Vector<double>[] input, Vector<double>[] desiredOutput, Matrix<double>[] w)
@@ -46,7 +47,7 @@ namespace TP5
                 sum += dif * dif;
             }
             double error = sum * 0.5d;
-            Console.WriteLine($"Error: {error}");
+            //Console.WriteLine($"Error: {error}");
             return error;
         }
 
@@ -80,14 +81,14 @@ namespace TP5
         }
 
         //dado el espacio latente te devuelve la letra que representa
-        public Vector<double> MapTry(Vector<double> input)
+        public Vector<double> MapTry(Vector<double> input, int latentLayerIndex)
         {
             Matrix<double>[] w = W;
             Vector<double> V = input;
-            for (int k = 2; k < layers.Length; k++)
+            for (int k = latentLayerIndex; k < layers.Length - 1; k++)
             {
                 //Agrego el valor 1 al principio de cada salida intermedia.
-                if (k > 0 || (w[k].ColumnCount != V.Count))
+                if (k > latentLayerIndex || (w[k].ColumnCount != V.Count))
                     V = Vector<double>.Build.DenseOfEnumerable(new double[] { 1 }.Concat(V));
                 V = (w[k] * V).Map(g[k]);
             }
@@ -95,11 +96,11 @@ namespace TP5
         }
 
         // obtiene el espacio latente de una letra dada
-        public Vector<double> MapGet(Vector<double> input)
+        public Vector<double> MapGet(Vector<double> input, int latentLayerIndex)
         {
             Matrix<double>[] w = W;
             Vector<double> V = input;
-            for (int k = 0; k < 2; k++)
+            for (int k = 0; k < latentLayerIndex; k++)
             {
                 //Agrego el valor 1 al principio de cada salida intermedia.
                 if (k > 0 || (w[k].ColumnCount != V.Count))
@@ -197,7 +198,7 @@ namespace TP5
             return error_min;
         }
 
-        public void Learn(
+        public List<double> Learn(
             Vector<double>[] trainingInput, 
             Vector<double>[] trainingOutput,
             Vector<double>[] testInput,
@@ -227,6 +228,7 @@ namespace TP5
             double error_min = double.MaxValue;
 
             Stopwatch sw = new Stopwatch();
+            List<double> errors = new List<double>();
             for(int i = 0; i < epochs && error_min > minError; i++)
             {
                 sw.Restart();
@@ -280,11 +282,13 @@ namespace TP5
                         for (int k = 0; k < M; k++)
                             w[k] += deltaW[k];
                         error = CalculateError(input, trainingOutput, w);
+                        errors.Add(error);
                         if (error < error_min)
                         {
                             error_min = error;
                             w_min = w;
-                            UpdatedWeights(w_min);
+                            if(UpdatedWeights != null)
+                                UpdatedWeights(w_min);
                         }
                         //Reinicio los deltaW para el proximo lote.
                         Array.Fill(deltaW, null);
@@ -295,17 +299,20 @@ namespace TP5
                     for (int k = 0; k < M; k++)
                         w[k] += deltaW[k];
                     error = CalculateError(input, trainingOutput, w);
+                    errors.Add(error);
                     if (error < error_min)
                     {
                         error_min = error;
                         w_min = w;
-                        UpdatedWeights(w_min);
+                        if (UpdatedWeights != null)
+                            UpdatedWeights(w_min);
                     }
                 }
                 sw.Stop();
                 Console.WriteLine($"Epoch {i} finished in {sw.Elapsed.TotalSeconds}s");
             }
             W = w_min;
+            return errors;
         }
     }
 }

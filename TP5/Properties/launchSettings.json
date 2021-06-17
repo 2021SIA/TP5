@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "TP5": {
+      "commandName": "Project",
+      "commandLineArgs": "--config config.yaml"
+    }
+  }
+}
