@@ -3,6 +3,7 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 from os import path
+import os
 
 
 class Sampling(layers.Layer):
@@ -51,6 +52,8 @@ class VAE(keras.Model):
         return img
 
     def save(self, dir: str = '.'):
+        if not path.exists(dir):
+            os.mkdir(dir)
         self.encoder.save(path.join(dir, 'encoder.tf'))
         self.decoder.save(path.join(dir, 'decoder.tf'))
 
