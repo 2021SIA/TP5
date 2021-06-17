@@ -1,6 +1,9 @@
-﻿using MathNet.Numerics.LinearAlgebra;
+﻿using CsvHelper;
+using MathNet.Numerics;
+using MathNet.Numerics.LinearAlgebra;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 
@@ -8,7 +11,8 @@ namespace TP5
 {
     class Program
     {
-
+        private static string weightsFile = "weights.csv";
+        private static Matrix<double>[] currentWeights;
         static List<Vector<double>> ParseTSV(string path, int recordLines)
         {
             List<Vector<double>> trainingInput = new List<Vector<double>>();
@@ -26,6 +30,32 @@ namespace TP5
             }
             return trainingInput;
         }
+
+        public static void PersistWeights(Matrix<double>[] weights, string file)
+        {
+            using var stream = new StreamWriter(file);
+            foreach(var matrix in weights)
+            {
+                var line = string.Join(' ', matrix
+                    .ToRowMajorArray()
+                    .Select(d => d.ToString()));
+                stream.WriteLine(line);
+            }
+        }
+
+        public static Matrix<double>[] RestoreWeights(int[] layers, string file)
+        {
+            using var stream = new StreamReader(file);
+            var matrices = new List<Matrix<double>>();
+            for(int i = 0; i < layers.Length - 1; i++)
+            {
+                var strings = stream.ReadLine().Split(' ');
+                var fields = strings.Select(s => double.Parse(s));
+                matrices.Add(Matrix<double>.Build.DenseOfRowMajor(layers[i+1], layers[i] + 1, fields));
+            }
+            return matrices.ToArray();
+        }
+
         static void Main(string[] args)
         {
             FirstExcercise();
@@ -43,7 +73,7 @@ namespace TP5
             Array.Fill(actFunctions, activationFunction);
             Array.Fill(actDFunctions, activationFunctionD);
 
-            var perceptron = new MultiLayerPerceptron(layers, 0.1, actFunctions, actDFunctions, false);
+            var perceptron = new MultiLayerPerceptron(layers, 0.1, actFunctions, actDFunctions, false, true);
             var fontRaw = new double[32][] {
                 new double[] {0x0e, 0x11, 0x17, 0x15, 0x17, 0x10, 0x0f},   // 0x40, @
                 new double[] {0x04, 0x0a, 0x11, 0x11, 0x1f, 0x11, 0x11},   // 0x41, A
@@ -111,6 +141,56 @@ namespace TP5
             // --------------------------------------------------------------------------------------
             var error = fonts.Aggregate(0.0,(sum, v) => sum + perceptron.CalculateError(new Vector<double>[] { v }, new Vector<double>[] { v }));
             return;
+        }
+
+        /// <summary>
+        /// Autoencoder
+        /// </summary>
+        /// <param name="learningRate">Learning rate</param>
+        /// <param name="alpha">Momentum </param>
+        /// <param name="epochs">Number of epochs</param>
+        /// <param name="batch">Batch size</param>
+        static void Ej2(int epochs, double learningRate = 0.01, int batch = 16, double alpha = 0.8, bool train = true)
+        {
+            Func<double, double> activationFunction, activationFunctionD;
+            activationFunction = SpecialFunctions.Logistic;
+            activationFunctionD = val => SpecialFunctions.Logistic(val) * (1 - SpecialFunctions.Logistic(val));
+            int[] layers = new int[] { 3888, 128, 2, 128, 3888 };
+            var actFunctions = new Func<double, double>[layers.Length - 1];
+            var actDFunctions = new Func<double, double>[layers.Length - 1];
+            Array.Fill(actFunctions, activationFunction);
+            Array.Fill(actDFunctions, activationFunctionD);
+
+            var images = ImageHelper.LoadImagesFromDirectory("Images/Microsoft");
+            var perceptron = new MultiLayerPerceptron(layers, learningRate, actFunctions, actDFunctions, false, true);
+            if (File.Exists(weightsFile))
+                perceptron.W = RestoreWeights(layers, "weights.csv");
+            else
+                perceptron.InitializeRandom();
+            perceptron.Alpha = alpha;
+
+            if(train)
+            {
+                Console.CancelKeyPress += (sender, e) =>
+                {
+                    Console.WriteLine("Saving...");
+                    PersistWeights(currentWeights, weightsFile);
+                };
+                currentWeights = perceptron.W;
+                perceptron.UpdatedWeights += w => currentWeights = w;
+
+                perceptron.Learn(images, images, new Vector<double>[] { }, new Vector<double>[] { }, batch, 1, epochs);
+
+                PersistWeights(perceptron.W, weightsFile);
+                return;
+            }
+
+            var encoder = new MultiLayerPerceptron(layers[0..3], 0, actFunctions[0..3], actDFunctions[0..3], false, false);
+            encoder.W = perceptron.W[0..3];
+            var encodings = images.Select(img => encoder.Map(img).ToArray()).ToArray();
+
+            var output = perceptron.Map(images[0]);
+            ImageHelper.ImageFromVector(36, 36, output).Save("smile.png");
         }
     }
 }
